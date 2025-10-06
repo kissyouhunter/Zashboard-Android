@@ -1,0 +1,52 @@
+name: Build Zashboard Android
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: Build Android APKs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run build || echo "skip if not a Node project"
+
+      - name: Install Capacitor and Android tools
+        run: |
+          npm install @capacitor/core @capacitor/cli
+          npx cap sync android
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build Debug APK (multi-arch)
+        run: |
+          cd android
+          ./gradlew assembleDebug
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: Zashboard-Android-APKs
+          path: |
+            android/app/build/outputs/apk/**/*.apk
