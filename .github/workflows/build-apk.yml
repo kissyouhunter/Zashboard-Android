@@ -15,53 +15,34 @@ jobs:
       - name: Checkout workflow repository
         uses: actions/checkout@v4
 
-      # 下载并解压Zashboard
       - name: Download and extract Zashboard
         run: |
-          echo "Downloading Zashboard prebuilt release..."
           wget -q https://github.com/Zephyruso/zashboard/releases/latest/download/dist-firasans-only.zip
-          
-          echo "Extracting files..."
           unzip -q dist-firasans-only.zip
-          
-          echo "Moving dist/ to zashboard-dist/..."
           mv dist zashboard-dist
-          
-          echo "Verification:"
-          ls -lh zashboard-dist/
           
           if [ ! -f "zashboard-dist/index.html" ]; then
             echo "ERROR: index.html not found!"
             exit 1
           fi
-          
-          echo "✓ Zashboard extracted successfully"
 
-      # 设置Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      # 初始化npm项目
       - name: Initialize npm project
         run: |
           cat > package.json << 'EOF'
           {
             "name": "zashboard-android",
-            "version": "1.0.0",
-            "description": "Zashboard Android wrapper"
+            "version": "1.0.0"
           }
           EOF
 
-      # 安装Capacitor依赖（固定稳定版本）
       - name: Install Capacitor packages
-        run: |
-          echo "Installing Capacitor 6.1.2 (stable)..."
-          npm install @capacitor/core@6.1.2 @capacitor/cli@6.1.2 @capacitor/android@6.1.2
-          echo "✓ Capacitor installed"
+        run: npm install @capacitor/core@6.1.2 @capacitor/cli@6.1.2 @capacitor/android@6.1.2
 
-      # 创建Capacitor配置（支持HTTP）
       - name: Create Capacitor config
         run: |
           cat > capacitor.config.json << 'EOF'
@@ -77,65 +58,74 @@ jobs:
             }
           }
           EOF
-          echo "✓ Capacitor config created (HTTP enabled)"
 
-      # 添加Android平台
       - name: Add Android platform
         run: npx cap add android
 
-      # 同步Web资源
       - name: Sync Capacitor
         run: npx cap sync android
 
-      # 配置Android允许HTTP流量
       - name: Configure Android for HTTP support
         run: |
-          echo "Configuring AndroidManifest.xml for HTTP support..."
-          
-          # 添加 usesCleartextTraffic 属性到 application 标签
           sed -i 's/<application/<application\n        android:usesCleartextTraffic="true"/' \
             android/app/src/main/AndroidManifest.xml
-          
-          echo "✓ HTTP cleartext traffic enabled"
-          
-          # 验证配置
-          echo "Verifying AndroidManifest.xml:"
-          grep -A 2 "usesCleartextTraffic" android/app/src/main/AndroidManifest.xml || echo "Warning: usesCleartextTraffic not found"
 
-      # 设置JDK 21
+      - name: Decode signing key from secrets
+        run: |
+          echo "${{ secrets.KEYSTORE_FILE }}" | base64 -d > android/app/zashboard-release.keystore
+          echo "✓ Signing key decoded from secure secrets"
+
+      - name: Configure Gradle signing for Release
+        run: |
+          cat >> android/app/build.gradle << 'EOF'
+
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file('zashboard-release.keystore')
+                      storePassword "${{ secrets.KEYSTORE_PASSWORD }}"
+                      keyAlias "${{ secrets.KEY_ALIAS }}"
+                      keyPassword "${{ secrets.KEY_PASSWORD }}"
+                  }
+              }
+              buildTypes {
+                  debug {
+                      signingConfig signingConfigs.release
+                  }
+                  release {
+                      signingConfig signingConfigs.release
+                      minifyEnabled false
+                      shrinkResources false
+                  }
+              }
+          }
+          EOF
+          echo "✓ Gradle signing configured for Release build"
+
       - name: Setup JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      # 设置Android SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      # 构建APK
-      - name: Build Debug APK
+      # 改为构建Release APK
+      - name: Build Release APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace --no-daemon
+          ./gradlew assembleRelease --stacktrace --no-daemon
         timeout-minutes: 15
 
-      # 列出生成的文件
-      - name: List build outputs
-        run: |
-          echo "Build outputs:"
-          find android/app/build/outputs -name "*.apk" -exec ls -lh {} \;
-
-      # 上传APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: zashboard-android-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: zashboard-android-release
+          path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
 
-      # 创建Release
       - name: Create Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1
@@ -145,25 +135,25 @@ jobs:
           body: |
             🚀 Zashboard Android APK - Build #${{ github.run_number }}
             
-            📦 Based on Zashboard latest release
-            🔧 Built with Capacitor 6.1.2
-            ✅ Supports both HTTP and HTTPS connections
+            📦 **Release build** - Production ready
+            🔒 Securely signed with encrypted keystore
+            ✅ HTTP and HTTPS both supported
             
-            ## Installation
-            1. Download `app-debug.apk` below
-            2. Enable "Install from unknown sources" in Android settings
-            3. Install and open the app
+            ## Installation & Update
+            - **New users**: Download and install `app-release.apk`
+            - **Existing users (v11+)**: Can upgrade without uninstalling
+            - **Users on v10 or earlier**: Must uninstall first, then install
             
             ## Configuration
-            Enter your Mihomo server details:
-            - Server: `http://YOUR_IP:9090` (HTTP supported ✓)
-            - Or: `https://YOUR_IP:9443` (HTTPS also works)
-            - Secret: (optional, if configured in Mihomo)
+            Connect to your Mihomo server:
+            - Server: `http://YOUR_IP:9090` (HTTP) or `https://YOUR_IP:9443` (HTTPS)
+            - Secret: (optional, if configured)
             
-            ## Notes
-            - HTTP connections are enabled for local network usage
-            - For security, use HTTPS when possible
-          files: android/app/build/outputs/apk/debug/app-debug.apk
+            ## Build Info
+            - Type: Release (optimized)
+            - Signing: Secure keystore from GitHub Secrets
+            - Based on: Zashboard latest release
+          files: android/app/build/outputs/apk/release/app-release.apk
           draft: false
           prerelease: false
         env:
