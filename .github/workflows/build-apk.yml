@@ -61,7 +61,7 @@ jobs:
           npm install @capacitor/core@6.1.2 @capacitor/cli@6.1.2 @capacitor/android@6.1.2
           echo "✓ Capacitor installed"
 
-      # 创建Capacitor配置
+      # 创建Capacitor配置（支持HTTP）
       - name: Create Capacitor config
         run: |
           cat > capacitor.config.json << 'EOF'
@@ -70,10 +70,14 @@ jobs:
             "appName": "Zashboard",
             "webDir": "zashboard-dist",
             "server": {
-              "androidScheme": "https"
+              "androidScheme": "http"
+            },
+            "android": {
+              "allowMixedContent": true
             }
           }
           EOF
+          echo "✓ Capacitor config created (HTTP enabled)"
 
       # 添加Android平台
       - name: Add Android platform
@@ -83,11 +87,20 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      # 配置Android权限（可选，Capacitor已自动添加）
-      - name: Verify Android permissions
+      # 配置Android允许HTTP流量
+      - name: Configure Android for HTTP support
         run: |
-          echo "Checking AndroidManifest.xml..."
-          grep -A 5 "<manifest" android/app/src/main/AndroidManifest.xml || true
+          echo "Configuring AndroidManifest.xml for HTTP support..."
+          
+          # 添加 usesCleartextTraffic 属性到 application 标签
+          sed -i 's/<application/<application\n        android:usesCleartextTraffic="true"/' \
+            android/app/src/main/AndroidManifest.xml
+          
+          echo "✓ HTTP cleartext traffic enabled"
+          
+          # 验证配置
+          echo "Verifying AndroidManifest.xml:"
+          grep -A 2 "usesCleartextTraffic" android/app/src/main/AndroidManifest.xml || echo "Warning: usesCleartextTraffic not found"
 
       # 设置JDK 21
       - name: Setup JDK 21
@@ -134,16 +147,22 @@ jobs:
             
             📦 Based on Zashboard latest release
             🔧 Built with Capacitor 6.1.2
+            ✅ Supports both HTTP and HTTPS connections
             
             ## Installation
             1. Download `app-debug.apk` below
-            2. Enable "Install from unknown sources"
+            2. Enable "Install from unknown sources" in Android settings
             3. Install and open the app
             
             ## Configuration
             Enter your Mihomo server details:
-            - Server: `http://YOUR_IP:9090`
-            - Secret: (optional)
+            - Server: `http://YOUR_IP:9090` (HTTP supported ✓)
+            - Or: `https://YOUR_IP:9443` (HTTPS also works)
+            - Secret: (optional, if configured in Mihomo)
+            
+            ## Notes
+            - HTTP connections are enabled for local network usage
+            - For security, use HTTPS when possible
           files: android/app/build/outputs/apk/debug/app-debug.apk
           draft: false
           prerelease: false
