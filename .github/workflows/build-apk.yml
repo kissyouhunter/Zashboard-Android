@@ -28,14 +28,16 @@ jobs:
           echo "Contents of extracted files:"
           ls -la zashboard-dist/
 
-      # 安装Capacitor CLI
-      - name: Install Capacitor CLI
-        run: npm install -g @capacitor/cli
+      # 设置Node.js（Capacitor需要）
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
 
-      # 初始化Capacitor项目
-      - name: Initialize Capacitor project
+      # 初始化npm项目
+      - name: Initialize npm project
         run: |
-          # 创建临时package.json
+          # 创建package.json
           cat > package.json << EOF
           {
             "name": "zashboard-android",
@@ -43,8 +45,15 @@ jobs:
             "description": "Zashboard Android wrapper"
           }
           EOF
-          
-          # 创建Capacitor配置
+
+      # 安装Capacitor依赖（关键步骤）
+      - name: Install Capacitor packages
+        run: |
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+
+      # 创建Capacitor配置
+      - name: Create Capacitor config
+        run: |
           cat > capacitor.config.json << EOF
           {
             "appId": "com.zashboard.app",
@@ -70,7 +79,6 @@ jobs:
       # 配置网络权限
       - name: Configure Android permissions
         run: |
-          # 添加网络权限到AndroidManifest.xml
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' \
             android/app/src/main/AndroidManifest.xml
           
