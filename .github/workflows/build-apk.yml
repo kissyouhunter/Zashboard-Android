@@ -15,17 +15,22 @@ jobs:
       - name: Checkout workflow repository
         uses: actions/checkout@v4
 
-      # 下载并解压Zashboard
+      # 下载并解压Zashboard（修复版）
       - name: Download and extract Zashboard
         run: |
           echo "Downloading Zashboard prebuilt release..."
           wget -q https://github.com/Zephyruso/zashboard/releases/latest/download/dist-firasans-only.zip
           
-          echo "Extracting to zashboard-dist/..."
-          mkdir -p zashboard-dist
-          unzip -q dist-firasans-only.zip -d zashboard-dist
+          echo "Extracting files..."
+          unzip -q dist-firasans-only.zip
           
-          echo "Verifying structure..."
+          echo "Contents after extraction:"
+          ls -la
+          
+          echo "Moving dist/ to zashboard-dist/..."
+          mv dist zashboard-dist
+          
+          echo "Final structure:"
           ls -lh zashboard-dist/
           
           if [ ! -f "zashboard-dist/index.html" ]; then
@@ -90,8 +95,8 @@ jobs:
           npx cap sync android
           echo "✓ Sync completed"
 
-      # 配置Android权限和设置
-      - name: Configure Android
+      # 配置Android权限
+      - name: Configure Android permissions
         run: |
           echo "Configuring AndroidManifest.xml..."
           
@@ -102,10 +107,6 @@ jobs:
             android/app/src/main/AndroidManifest.xml
           
           echo "✓ Permissions added"
-          
-          # 验证
-          echo "Verifying AndroidManifest.xml:"
-          grep -A 3 "<manifest" android/app/src/main/AndroidManifest.xml || true
 
       # 设置JDK
       - name: Setup JDK
@@ -126,12 +127,6 @@ jobs:
           ./gradlew assembleDebug --stacktrace --no-daemon
         timeout-minutes: 15
 
-      # 列出生成的APK
-      - name: List generated APKs
-        run: |
-          echo "Generated APK files:"
-          find android/app/build/outputs/apk -name "*.apk" -exec ls -lh {} \;
-
       # 上传APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -148,16 +143,19 @@ jobs:
           tag_name: v${{ github.run_number }}
           name: Zashboard Android v${{ github.run_number }}
           body: |
-            Zashboard Android APK - Auto build #${{ github.run_number }}
+            🚀 Zashboard Android APK - Build #${{ github.run_number }}
             
-            Based on Zashboard latest release
-            Built with Capacitor
+            📦 Based on Zashboard latest release
+            🔧 Built with Capacitor
             
             ## Installation
-            1. Download the APK file below
-            2. Enable "Install from unknown sources" on your Android device
-            3. Install the APK
-            4. Open the app and configure your Mihomo server address
+            1. Download `app-debug.apk` below
+            2. Enable "Install from unknown sources" on Android
+            3. Install and configure your Mihomo server
+            
+            ## Usage
+            - Server: `http://YOUR_IP:9090`
+            - Configure in app settings
           files: android/app/build/outputs/apk/debug/app-debug.apk
           draft: false
           prerelease: false
