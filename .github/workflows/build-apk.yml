@@ -12,77 +12,92 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 检出源码
-      - name: Checkout source
+      - name: Checkout workflow repository
         uses: actions/checkout@v4
 
-      # 2. 设置Node.js环境
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-          cache: 'npm'
-
-      # 3. 安装Zashboard依赖并构建
-      - name: Install dependencies and build
+      # 下载预构建的Zashboard发行版
+      - name: Download Zashboard dist
         run: |
-          npm ci
-          npm run build
-
-      # 4. 初始化Capacitor（如果项目尚未配置）
-      - name: Initialize Capacitor
-        run: |
-          # 安装Capacitor CLI
-          npm install -g @capacitor/cli
+          echo "Downloading Zashboard prebuilt release..."
+          wget -O zashboard-dist.zip https://github.com/Zephyruso/zashboard/releases/latest/download/dist-firasans-only.zip
           
-          # 检查是否已有capacitor.config文件，没有则创建
-          if [ ! -f "capacitor.config.json" ] && [ ! -f "capacitor.config.ts" ]; then
-            echo "Creating Capacitor config..."
-            cat > capacitor.config.json << EOF
+          echo "Extracting files..."
+          mkdir -p zashboard-dist
+          unzip zashboard-dist.zip -d zashboard-dist
+          
+          echo "Contents of extracted files:"
+          ls -la zashboard-dist/
+
+      # 安装Capacitor CLI
+      - name: Install Capacitor CLI
+        run: npm install -g @capacitor/cli
+
+      # 初始化Capacitor项目
+      - name: Initialize Capacitor project
+        run: |
+          # 创建临时package.json
+          cat > package.json << EOF
+          {
+            "name": "zashboard-android",
+            "version": "1.0.0",
+            "description": "Zashboard Android wrapper"
+          }
+          EOF
+          
+          # 创建Capacitor配置
+          cat > capacitor.config.json << EOF
           {
             "appId": "com.zashboard.app",
             "appName": "Zashboard",
-            "webDir": "dist",
-            "bundledWebRuntime": false
+            "webDir": "zashboard-dist",
+            "bundledWebRuntime": false,
+            "android": {
+              "allowMixedContent": true
+            }
           }
           EOF
-          fi
+          
+          echo "Capacitor config created"
 
-      # 5. 添加Android平台
+      # 添加Android平台
       - name: Add Android platform
-        run: |
-          # 检查android目录是否存在
-          if [ ! -d "android" ]; then
-            npx cap add android
-          fi
+        run: npx cap add android
 
-      # 6. 同步Web资源到Android
+      # 同步Web资源到Android
       - name: Sync Capacitor
-        run: |
-          npx cap sync android
+        run: npx cap sync android
 
-      # 7. 设置JDK环境
+      # 配置网络权限
+      - name: Configure Android permissions
+        run: |
+          # 添加网络权限到AndroidManifest.xml
+          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' \
+            android/app/src/main/AndroidManifest.xml
+          
+          echo "Permissions configured"
+
+      # 设置JDK环境
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 8. 设置Android SDK
+      # 设置Android SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      # 9. 赋予Gradle执行权限
+      # 赋予Gradle执行权限
       - name: Grant execute permission for gradlew
         run: chmod +x android/gradlew
 
-      # 10. 构建Debug APK
+      # 构建Debug APK
       - name: Build Debug APK
         run: |
           cd android
           ./gradlew assembleDebug --stacktrace
 
-      # 11. 上传APK产物
+      # 上传APK产物
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
@@ -90,7 +105,7 @@ jobs:
           path: android/app/build/outputs/apk/debug/*.apk
           retention-days: 30
 
-      # 12. (可选) 创建Release
+      # 创建Release
       - name: Create Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1
