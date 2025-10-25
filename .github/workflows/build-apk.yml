@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-android:
-    name: Build Android APKs
+    name: Build Zashboard Android APK
     runs-on: ubuntu-latest
 
     steps:
@@ -20,15 +20,37 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install dependencies
+      # 修复点：改用 npm install
+      - name: Install dependencies and build
         run: |
-          npm ci
-          npm run build || echo "skip if not a Node project"
+          npm install
+          npm run build
 
-      - name: Install Capacitor and Android tools
+      - name: Install Capacitor CLI
+        run: npm install -g @capacitor/cli
+
+      - name: Initialize Capacitor
         run: |
-          npm install @capacitor/core @capacitor/cli
-          npx cap sync android
+          if [ ! -f "capacitor.config.json" ] && [ ! -f "capacitor.config.ts" ]; then
+            echo "Creating Capacitor config..."
+            cat > capacitor.config.json << EOF
+          {
+            "appId": "com.zashboard.app",
+            "appName": "Zashboard",
+            "webDir": "dist",
+            "bundledWebRuntime": false
+          }
+          EOF
+          fi
+
+      - name: Add Android platform
+        run: |
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+
+      - name: Sync Capacitor
+        run: npx cap sync android
 
       - name: Setup JDK
         uses: actions/setup-java@v4
@@ -39,14 +61,17 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Build Debug APK (multi-arch)
+      - name: Grant execute permission for gradlew
+        run: chmod +x android/gradlew
+
+      - name: Build Debug APK
         run: |
           cd android
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --stacktrace
 
-      - name: Upload APKs
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zashboard-Android-APKs
-          path: |
-            android/app/build/outputs/apk/**/*.apk
+          name: zashboard-android-debug
+          path: android/app/build/outputs/apk/debug/*.apk
+          retention-days: 30
