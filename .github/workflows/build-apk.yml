@@ -15,20 +15,27 @@ jobs:
       - name: Checkout workflow repository
         uses: actions/checkout@v4
 
-      # 下载预构建的Zashboard发行版
-      - name: Download Zashboard dist
+      # 下载并解压Zashboard
+      - name: Download and extract Zashboard
         run: |
           echo "Downloading Zashboard prebuilt release..."
-          wget -O zashboard-dist.zip https://github.com/Zephyruso/zashboard/releases/latest/download/dist-firasans-only.zip
+          wget -q https://github.com/Zephyruso/zashboard/releases/latest/download/dist-firasans-only.zip
           
-          echo "Extracting files..."
+          echo "Extracting to zashboard-dist/..."
           mkdir -p zashboard-dist
-          unzip zashboard-dist.zip -d zashboard-dist
+          unzip -q dist-firasans-only.zip -d zashboard-dist
           
-          echo "Contents of extracted files:"
-          ls -la zashboard-dist/
+          echo "Verifying structure..."
+          ls -lh zashboard-dist/
+          
+          if [ ! -f "zashboard-dist/index.html" ]; then
+            echo "ERROR: index.html not found!"
+            exit 1
+          fi
+          
+          echo "✓ Zashboard extracted successfully"
 
-      # 设置Node.js（Capacitor需要）
+      # 设置Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -37,54 +44,70 @@ jobs:
       # 初始化npm项目
       - name: Initialize npm project
         run: |
-          # 创建package.json
-          cat > package.json << EOF
+          cat > package.json << 'EOF'
           {
             "name": "zashboard-android",
             "version": "1.0.0",
-            "description": "Zashboard Android wrapper"
+            "description": "Zashboard Android wrapper",
+            "dependencies": {}
           }
           EOF
+          echo "✓ package.json created"
 
-      # 安装Capacitor依赖（关键步骤）
+      # 安装Capacitor依赖
       - name: Install Capacitor packages
         run: |
+          echo "Installing Capacitor dependencies..."
           npm install @capacitor/core @capacitor/cli @capacitor/android
+          echo "✓ Capacitor packages installed"
 
       # 创建Capacitor配置
       - name: Create Capacitor config
         run: |
-          cat > capacitor.config.json << EOF
+          cat > capacitor.config.json << 'EOF'
           {
             "appId": "com.zashboard.app",
             "appName": "Zashboard",
             "webDir": "zashboard-dist",
-            "bundledWebRuntime": false,
-            "android": {
-              "allowMixedContent": true
+            "server": {
+              "androidScheme": "https"
             }
           }
           EOF
-          
-          echo "Capacitor config created"
+          echo "✓ Capacitor config created"
 
       # 添加Android平台
       - name: Add Android platform
-        run: npx cap add android
+        run: |
+          echo "Adding Android platform..."
+          npx cap add android
+          echo "✓ Android platform added"
 
       # 同步Web资源到Android
       - name: Sync Capacitor
-        run: npx cap sync android
-
-      # 配置网络权限
-      - name: Configure Android permissions
         run: |
-          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' \
+          echo "Syncing web assets..."
+          npx cap sync android
+          echo "✓ Sync completed"
+
+      # 配置Android权限和设置
+      - name: Configure Android
+        run: |
+          echo "Configuring AndroidManifest.xml..."
+          
+          # 添加网络权限
+          sed -i '/<manifest/a\
+              <uses-permission android:name="android.permission.INTERNET" />\
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' \
             android/app/src/main/AndroidManifest.xml
           
-          echo "Permissions configured"
+          echo "✓ Permissions added"
+          
+          # 验证
+          echo "Verifying AndroidManifest.xml:"
+          grep -A 3 "<manifest" android/app/src/main/AndroidManifest.xml || true
 
-      # 设置JDK环境
+      # 设置JDK
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
@@ -95,22 +118,26 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      # 赋予Gradle执行权限
-      - name: Grant execute permission for gradlew
-        run: chmod +x android/gradlew
-
-      # 构建Debug APK
+      # 构建APK
       - name: Build Debug APK
         run: |
           cd android
-          ./gradlew assembleDebug --stacktrace
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace --no-daemon
+        timeout-minutes: 15
 
-      # 上传APK产物
+      # 列出生成的APK
+      - name: List generated APKs
+        run: |
+          echo "Generated APK files:"
+          find android/app/build/outputs/apk -name "*.apk" -exec ls -lh {} \;
+
+      # 上传APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: zashboard-android-debug
-          path: android/app/build/outputs/apk/debug/*.apk
+          name: zashboard-android-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
       # 创建Release
@@ -120,8 +147,19 @@ jobs:
         with:
           tag_name: v${{ github.run_number }}
           name: Zashboard Android v${{ github.run_number }}
-          files: android/app/build/outputs/apk/debug/*.apk
+          body: |
+            Zashboard Android APK - Auto build #${{ github.run_number }}
+            
+            Based on Zashboard latest release
+            Built with Capacitor
+            
+            ## Installation
+            1. Download the APK file below
+            2. Enable "Install from unknown sources" on your Android device
+            3. Install the APK
+            4. Open the app and configure your Mihomo server address
+          files: android/app/build/outputs/apk/debug/app-debug.apk
           draft: false
-          prerelease: true
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
