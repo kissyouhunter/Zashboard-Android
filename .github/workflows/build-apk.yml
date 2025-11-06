@@ -65,6 +65,28 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Update version numbers
+        run: |
+          # 获取上游 Zashboard 的版本号
+          UPSTREAM_VERSION=$(curl -s https://raw.githubusercontent.com/Zephyruso/zashboard/main/package.json | grep -oP '"version":\s*"\K[^"]+')
+
+          # 将版本号转换为 versionCode (例如: 2.0.0 -> 200000)
+          MAJOR=$(echo $UPSTREAM_VERSION | cut -d. -f1)
+          MINOR=$(echo $UPSTREAM_VERSION | cut -d. -f2)
+          PATCH=$(echo $UPSTREAM_VERSION | cut -d. -f3)
+          BASE_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+
+          # versionCode = 基础版本号 + 构建编号 (确保每次构建都是唯一的)
+          VERSION_CODE=$((BASE_CODE * 1000 + ${{ github.run_number }}))
+          VERSION_NAME="$UPSTREAM_VERSION-build${{ github.run_number }}"
+
+          # 更新 build.gradle 中的版本号
+          sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" android/app/build.gradle
+          sed -i "s/versionName \"[^\"]*\"/versionName \"$VERSION_NAME\"/" android/app/build.gradle
+
+          echo "✓ Upstream version: $UPSTREAM_VERSION"
+          echo "✓ Version updated to versionCode=$VERSION_CODE, versionName=$VERSION_NAME"
+
       - name: Configure Android for HTTP support
         run: |
           sed -i 's/<application/<application\n        android:usesCleartextTraffic="true"/' \
@@ -131,31 +153,34 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ github.run_number }}
-          name: Zashboard Android v${{ github.run_number }}
+          name: Zashboard Android Build ${{ github.run_number }}
           body: |
-            🚀 Zashboard Android APK - Build #${{ github.run_number }}
-            
+            🚀 Zashboard Android APK
+
             📦 **Release build** - Production ready
             🔒 Securely signed with encrypted keystore
             ✅ HTTP and HTTPS both supported
-            
+
+            ## Version Info
+            - **Upstream Version**: Based on Zashboard package.json version
+            - **Build Number**: #${{ github.run_number }}
+
             ## Installation & Update
             - **New users**: Download and install `app-release.apk`
-            - **Existing users (v11+)**: Can upgrade without uninstalling
-            - **Users on v10 or earlier**: Must uninstall first, then install
-            
+            - **Existing users**: Can upgrade directly without uninstalling
+            - **Note**: Version numbers auto-sync with upstream Zashboard releases
+
             ## Configuration
             Connect to your Mihomo server:
             - Server: `http://YOUR_IP:9090` (HTTP) or `https://YOUR_IP:9443` (HTTPS)
             - Secret: (optional, if configured)
-            
+
             ## Build Info
             - Type: Release (optimized)
             - Signing: Secure keystore from GitHub Secrets
-            - Based on: Zashboard latest release
+            - Based on: [Zashboard latest release](https://github.com/Zephyruso/zashboard/releases/latest)
           files: android/app/build/outputs/apk/release/app-release.apk
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
