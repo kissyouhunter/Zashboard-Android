@@ -78,15 +78,19 @@ jobs:
           # 使用 Zashboard 的图标
           if [ -f "zashboard-dist/pwa-512x512.png" ]; then
             cp zashboard-dist/pwa-512x512.png resources/icon.png
+            # 使用同一个图标作为启动画面（推荐至少 2732x2732）
+            # 先转换为更大尺寸的启动画面
+            convert zashboard-dist/pwa-512x512.png -resize 2732x2732 -gravity center -background white -extent 2732x2732 resources/splash.png
           elif [ -f "zashboard-dist/pwa-192x192.png" ]; then
             cp zashboard-dist/pwa-192x192.png resources/icon.png
+            convert zashboard-dist/pwa-192x192.png -resize 2732x2732 -gravity center -background white -extent 2732x2732 resources/splash.png
           fi
 
-          # 使用 cordova-res 生成所有需要的图标
+          # 使用 cordova-res 生成图标和启动画面
           npm install -g cordova-res
-          cordova-res android --skip-config --copy --icon-source resources/icon.png
+          cordova-res android --skip-config --copy
 
-          echo "✓ Icon generated with cordova-res"
+          echo "✓ Icon and splash screen generated with cordova-res"
 
       - name: Update version numbers
         run: |
@@ -242,15 +246,19 @@ jobs:
           # 使用 MetaCubeX 的图标
           if [ -f "metacubex-dist/pwa-512x512.png" ]; then
             cp metacubex-dist/pwa-512x512.png resources/icon.png
+            # 使用同一个图标作为启动画面（推荐至少 2732x2732）
+            # 先转换为更大尺寸的启动画面
+            convert metacubex-dist/pwa-512x512.png -resize 2732x2732 -gravity center -background white -extent 2732x2732 resources/splash.png
           elif [ -f "metacubex-dist/pwa-192x192.png" ]; then
             cp metacubex-dist/pwa-192x192.png resources/icon.png
+            convert metacubex-dist/pwa-192x192.png -resize 2732x2732 -gravity center -background white -extent 2732x2732 resources/splash.png
           fi
 
-          # 使用 cordova-res 生成所有需要的图标
+          # 使用 cordova-res 生成图标和启动画面
           npm install -g cordova-res
-          cordova-res android --skip-config --copy --icon-source resources/icon.png
+          cordova-res android --skip-config --copy
 
-          echo "✓ Icon generated with cordova-res"
+          echo "✓ Icon and splash screen generated with cordova-res"
 
       - name: Update version numbers
         run: |
