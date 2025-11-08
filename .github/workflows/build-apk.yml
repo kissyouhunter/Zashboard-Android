@@ -155,15 +155,15 @@ jobs:
 
           echo "Using $SOURCE_ICON for Zashboard icon"
 
-          # 转换为各种 Android 分辨率
-          convert $SOURCE_ICON -resize 48x48 -background white -alpha remove -alpha off icon-48.png
-          convert $SOURCE_ICON -resize 72x72 -background white -alpha remove -alpha off icon-72.png
-          convert $SOURCE_ICON -resize 96x96 -background white -alpha remove -alpha off icon-96.png
-          convert $SOURCE_ICON -resize 144x144 -background white -alpha remove -alpha off icon-144.png
-          convert $SOURCE_ICON -resize 192x192 -background white -alpha remove -alpha off icon-192.png
+          # 转换为各种 Android 分辨率（简化版本，去掉复杂参数）
+          convert $SOURCE_ICON -resize 48x48 icon-48.png
+          convert $SOURCE_ICON -resize 72x72 icon-72.png
+          convert $SOURCE_ICON -resize 96x96 icon-96.png
+          convert $SOURCE_ICON -resize 144x144 icon-144.png
+          convert $SOURCE_ICON -resize 192x192 icon-192.png
           cd ..
 
-          # 强制替换所有图标文件（删除后重新创建）
+          # 替换所有图标文件
           for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
             case $density in
               mdpi) size=48 ;;
@@ -175,16 +175,13 @@ jobs:
 
             MIPMAP_DIR="android/app/src/main/res/mipmap-${density}"
 
-            # 删除所有旧图标
-            rm -f $MIPMAP_DIR/ic_launcher.* $MIPMAP_DIR/ic_launcher_round.* $MIPMAP_DIR/ic_launcher_foreground.* $MIPMAP_DIR/ic_launcher_background.*
-
-            # 复制新图标
-            cp zashboard-dist/icon-${size}.png $MIPMAP_DIR/ic_launcher.png
-            cp zashboard-dist/icon-${size}.png $MIPMAP_DIR/ic_launcher_round.png
+            # 强制覆盖图标
+            cp -f zashboard-dist/icon-${size}.png $MIPMAP_DIR/ic_launcher.png
+            cp -f zashboard-dist/icon-${size}.png $MIPMAP_DIR/ic_launcher_round.png
           done
 
           echo "=== Icon replacement completed ==="
-          find android/app/src/main/res/mipmap-* -name "ic_launcher*" -ls
+          ls -lh android/app/src/main/res/mipmap-*/ic_launcher.png
 
       # 改为构建Release APK
       - name: Build Release APK
@@ -349,15 +346,15 @@ jobs:
 
           echo "Using $SOURCE_ICON for MetaCubeX icon"
 
-          # 转换为各种 Android 分辨率
-          convert $SOURCE_ICON -resize 48x48 -background white -alpha remove -alpha off icon-48.png
-          convert $SOURCE_ICON -resize 72x72 -background white -alpha remove -alpha off icon-72.png
-          convert $SOURCE_ICON -resize 96x96 -background white -alpha remove -alpha off icon-96.png
-          convert $SOURCE_ICON -resize 144x144 -background white -alpha remove -alpha off icon-144.png
-          convert $SOURCE_ICON -resize 192x192 -background white -alpha remove -alpha off icon-192.png
+          # 转换为各种 Android 分辨率（简化版本，去掉复杂参数）
+          convert $SOURCE_ICON -resize 48x48 icon-48.png
+          convert $SOURCE_ICON -resize 72x72 icon-72.png
+          convert $SOURCE_ICON -resize 96x96 icon-96.png
+          convert $SOURCE_ICON -resize 144x144 icon-144.png
+          convert $SOURCE_ICON -resize 192x192 icon-192.png
           cd ..
 
-          # 强制替换所有图标文件（删除后重新创建）
+          # 替换所有图标文件
           for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
             case $density in
               mdpi) size=48 ;;
@@ -369,16 +366,13 @@ jobs:
 
             MIPMAP_DIR="android/app/src/main/res/mipmap-${density}"
 
-            # 删除所有旧图标
-            rm -f $MIPMAP_DIR/ic_launcher.* $MIPMAP_DIR/ic_launcher_round.* $MIPMAP_DIR/ic_launcher_foreground.* $MIPMAP_DIR/ic_launcher_background.*
-
-            # 复制新图标
-            cp metacubex-dist/icon-${size}.png $MIPMAP_DIR/ic_launcher.png
-            cp metacubex-dist/icon-${size}.png $MIPMAP_DIR/ic_launcher_round.png
+            # 强制覆盖图标
+            cp -f metacubex-dist/icon-${size}.png $MIPMAP_DIR/ic_launcher.png
+            cp -f metacubex-dist/icon-${size}.png $MIPMAP_DIR/ic_launcher_round.png
           done
 
           echo "=== Icon replacement completed ==="
-          find android/app/src/main/res/mipmap-* -name "ic_launcher*" -ls
+          ls -lh android/app/src/main/res/mipmap-*/ic_launcher.png
 
       - name: Build Release APK
         run: |
