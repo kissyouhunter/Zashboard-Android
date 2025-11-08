@@ -1,4 +1,4 @@
-name: Build Zashboard Android
+name: Build Android APKs (Zashboard & MetaCubeX)
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-android:
+  build-zashboard:
     name: Build Zashboard Android APK
     runs-on: ubuntu-latest
 
@@ -179,6 +179,183 @@ jobs:
             - Type: Release (optimized)
             - Signing: Secure keystore from GitHub Secrets
             - Based on: [Zashboard latest release](https://github.com/Zephyruso/zashboard/releases/latest)
+          files: android/app/build/outputs/apk/release/app-release.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-metacubex:
+    name: Build MetaCubeX Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout workflow repository
+        uses: actions/checkout@v4
+
+      - name: Download and extract MetaCubeX
+        run: |
+          wget -q https://github.com/MetaCubeX/metacubexd/releases/latest/download/compressed-dist.tgz
+          tar -xzf compressed-dist.tgz
+          mv dist metacubex-dist
+
+          if [ ! -f "metacubex-dist/index.html" ]; then
+            echo "ERROR: index.html not found!"
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Initialize npm project
+        run: |
+          cat > package.json << 'EOF'
+          {
+            "name": "metacubex-android",
+            "version": "1.0.0"
+          }
+          EOF
+
+      - name: Install Capacitor packages
+        run: npm install @capacitor/core@6.1.2 @capacitor/cli@6.1.2 @capacitor/android@6.1.2
+
+      - name: Create Capacitor config
+        run: |
+          cat > capacitor.config.json << 'EOF'
+          {
+            "appId": "com.metacubex.app",
+            "appName": "MetaCubeX",
+            "webDir": "metacubex-dist",
+            "server": {
+              "androidScheme": "http"
+            },
+            "android": {
+              "allowMixedContent": true
+            }
+          }
+          EOF
+
+      - name: Add Android platform
+        run: npx cap add android
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Update version numbers
+        run: |
+          # 获取上游 MetaCubeX 的版本号
+          UPSTREAM_VERSION=$(curl -s https://github.com/MetaCubeX/metacubexd/raw/main/package.json | grep -oP '"version":\s*"\K[^"]+')
+
+          # 将版本号转换为 versionCode (例如: 2.0.0 -> 200000)
+          MAJOR=$(echo $UPSTREAM_VERSION | cut -d. -f1)
+          MINOR=$(echo $UPSTREAM_VERSION | cut -d. -f2)
+          PATCH=$(echo $UPSTREAM_VERSION | cut -d. -f3)
+          BASE_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+
+          # versionCode = 基础版本号 + 构建编号 (确保每次构建都是唯一的)
+          VERSION_CODE=$((BASE_CODE * 1000 + ${{ github.run_number }}))
+          VERSION_NAME="$UPSTREAM_VERSION-build${{ github.run_number }}"
+
+          # 更新 build.gradle 中的版本号
+          sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" android/app/build.gradle
+          sed -i "s/versionName \"[^\"]*\"/versionName \"$VERSION_NAME\"/" android/app/build.gradle
+
+          echo "✓ Upstream version: $UPSTREAM_VERSION"
+          echo "✓ Version updated to versionCode=$VERSION_CODE, versionName=$VERSION_NAME"
+
+      - name: Configure Android for HTTP support
+        run: |
+          sed -i 's/<application/<application\n        android:usesCleartextTraffic="true"/' \
+            android/app/src/main/AndroidManifest.xml
+
+      - name: Decode signing key from secrets
+        run: |
+          echo "${{ secrets.KEYSTORE_FILE }}" | base64 -d > android/app/metacubex-release.keystore
+          echo "✓ Signing key decoded from secure secrets"
+
+      - name: Configure Gradle signing for Release
+        run: |
+          cat >> android/app/build.gradle << 'EOF'
+
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file('metacubex-release.keystore')
+                      storePassword "${{ secrets.KEYSTORE_PASSWORD }}"
+                      keyAlias "${{ secrets.KEY_ALIAS }}"
+                      keyPassword "${{ secrets.KEY_PASSWORD }}"
+                  }
+              }
+              buildTypes {
+                  debug {
+                      signingConfig signingConfigs.release
+                  }
+                  release {
+                      signingConfig signingConfigs.release
+                      minifyEnabled false
+                      shrinkResources false
+                  }
+              }
+          }
+          EOF
+          echo "✓ Gradle signing configured for Release build"
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build Release APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --stacktrace --no-daemon
+        timeout-minutes: 15
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: metacubex-android-release
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+
+      - name: Create Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: metacubex-v${{ github.run_number }}
+          name: MetaCubeX Android Build ${{ github.run_number }}
+          body: |
+            🚀 MetaCubeX Android APK
+
+            📦 **Release build** - Production ready
+            🔒 Securely signed with encrypted keystore
+            ✅ HTTP and HTTPS both supported
+
+            ## Version Info
+            - **Upstream Version**: Based on MetaCubeX package.json version
+            - **Build Number**: #${{ github.run_number }}
+
+            ## Installation & Update
+            - **New users**: Download and install `app-release.apk`
+            - **Existing users**: Can upgrade directly without uninstalling
+            - **Note**: Version numbers auto-sync with upstream MetaCubeX releases
+
+            ## Configuration
+            Connect to your Mihomo/Clash server:
+            - Server: `http://YOUR_IP:9090` (HTTP) or `https://YOUR_IP:9443` (HTTPS)
+            - Secret: (optional, if configured)
+
+            ## Build Info
+            - Type: Release (optimized)
+            - Signing: Secure keystore from GitHub Secrets
+            - Based on: [MetaCubeX latest release](https://github.com/MetaCubeX/metacubexd/releases/latest)
           files: android/app/build/outputs/apk/release/app-release.apk
           draft: false
           prerelease: false
