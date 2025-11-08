@@ -69,40 +69,63 @@ jobs:
         run: |
           # 安装 imagemagick 用于图标转换
           sudo apt-get update -qq
-          sudo apt-get install -y imagemagick
+          sudo apt-get install -y imagemagick webp
 
-          # 使用 Zashboard 的 favicon 作为图标
+          # 使用 Zashboard 的高质量 PNG 图标
           cd zashboard-dist
-          # 将 SVG 或 PNG 转换为不同分辨率的图标
-          if [ -f "favicon.svg" ]; then
-            convert -background none favicon.svg -resize 48x48 icon-48.png
-            convert -background none favicon.svg -resize 72x72 icon-72.png
-            convert -background none favicon.svg -resize 96x96 icon-96.png
-            convert -background none favicon.svg -resize 144x144 icon-144.png
-            convert -background none favicon.svg -resize 192x192 icon-192.png
+
+          # 直接使用 pwa-512x512.png 转换为各种分辨率
+          if [ -f "pwa-512x512.png" ]; then
+            SOURCE_ICON="pwa-512x512.png"
           elif [ -f "pwa-192x192.png" ]; then
-            convert pwa-192x192.png -resize 48x48 icon-48.png
-            convert pwa-192x192.png -resize 72x72 icon-72.png
-            convert pwa-192x192.png -resize 96x96 icon-96.png
-            convert pwa-192x192.png -resize 144x144 icon-144.png
-            convert pwa-192x192.png -resize 192x192 icon-192.png
+            SOURCE_ICON="pwa-192x192.png"
+          else
+            echo "ERROR: No suitable icon found!"
+            exit 1
           fi
+
+          echo "Using $SOURCE_ICON as source icon"
+
+          # 转换为各种 Android 分辨率的 PNG
+          convert $SOURCE_ICON -resize 48x48 icon-48.png
+          convert $SOURCE_ICON -resize 72x72 icon-72.png
+          convert $SOURCE_ICON -resize 96x96 icon-96.png
+          convert $SOURCE_ICON -resize 144x144 icon-144.png
+          convert $SOURCE_ICON -resize 192x192 icon-192.png
+
+          # 同时生成 WebP 格式（新版 Android 使用）
+          convert $SOURCE_ICON -resize 48x48 icon-48.webp
+          convert $SOURCE_ICON -resize 72x72 icon-72.webp
+          convert $SOURCE_ICON -resize 96x96 icon-96.webp
+          convert $SOURCE_ICON -resize 144x144 icon-144.webp
+          convert $SOURCE_ICON -resize 192x192 icon-192.webp
           cd ..
 
-          # 替换 Android 图标
-          cp zashboard-dist/icon-48.png android/app/src/main/res/mipmap-mdpi/ic_launcher.png
-          cp zashboard-dist/icon-72.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
-          cp zashboard-dist/icon-96.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
-          cp zashboard-dist/icon-144.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-          cp zashboard-dist/icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          # 替换所有 mipmap 目录中的图标文件
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            case $density in
+              mdpi) size=48 ;;
+              hdpi) size=72 ;;
+              xhdpi) size=96 ;;
+              xxhdpi) size=144 ;;
+              xxxhdpi) size=192 ;;
+            esac
 
-          # 同时替换圆形图标
-          cp zashboard-dist/icon-48.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
-          cp zashboard-dist/icon-72.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
-          cp zashboard-dist/icon-96.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
-          cp zashboard-dist/icon-144.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
-          cp zashboard-dist/icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+            # 替换 PNG 格式
+            cp zashboard-dist/icon-${size}.png android/app/src/main/res/mipmap-${density}/ic_launcher.png 2>/dev/null || true
+            cp zashboard-dist/icon-${size}.png android/app/src/main/res/mipmap-${density}/ic_launcher_round.png 2>/dev/null || true
+            # 替换 WebP 格式（如果存在）
+            if [ -f "android/app/src/main/res/mipmap-${density}/ic_launcher.webp" ]; then
+              cp zashboard-dist/icon-${size}.webp android/app/src/main/res/mipmap-${density}/ic_launcher.webp
+            fi
+            if [ -f "android/app/src/main/res/mipmap-${density}/ic_launcher_round.webp" ]; then
+              cp zashboard-dist/icon-${size}.webp android/app/src/main/res/mipmap-${density}/ic_launcher_round.webp
+            fi
+          done
 
+          # 验证图标已替换
+          echo "=== Replaced icons ==="
+          ls -lh android/app/src/main/res/mipmap-*/ic_launcher.* 2>/dev/null || true
           echo "✓ Zashboard app icon updated"
 
       - name: Update version numbers
@@ -250,40 +273,63 @@ jobs:
         run: |
           # 安装 imagemagick 用于图标转换
           sudo apt-get update -qq
-          sudo apt-get install -y imagemagick
+          sudo apt-get install -y imagemagick webp
 
-          # 使用 MetaCubeX 的 favicon 作为图标
+          # 使用 MetaCubeX 的高质量 PNG 图标
           cd metacubex-dist
-          # 将 SVG 或 PNG 转换为不同分辨率的图标
-          if [ -f "favicon.svg" ]; then
-            convert -background none favicon.svg -resize 48x48 icon-48.png
-            convert -background none favicon.svg -resize 72x72 icon-72.png
-            convert -background none favicon.svg -resize 96x96 icon-96.png
-            convert -background none favicon.svg -resize 144x144 icon-144.png
-            convert -background none favicon.svg -resize 192x192 icon-192.png
+
+          # 直接使用 pwa-512x512.png 转换为各种分辨率
+          if [ -f "pwa-512x512.png" ]; then
+            SOURCE_ICON="pwa-512x512.png"
           elif [ -f "pwa-192x192.png" ]; then
-            convert pwa-192x192.png -resize 48x48 icon-48.png
-            convert pwa-192x192.png -resize 72x72 icon-72.png
-            convert pwa-192x192.png -resize 96x96 icon-96.png
-            convert pwa-192x192.png -resize 144x144 icon-144.png
-            convert pwa-192x192.png -resize 192x192 icon-192.png
+            SOURCE_ICON="pwa-192x192.png"
+          else
+            echo "ERROR: No suitable icon found!"
+            exit 1
           fi
+
+          echo "Using $SOURCE_ICON as source icon"
+
+          # 转换为各种 Android 分辨率的 PNG
+          convert $SOURCE_ICON -resize 48x48 icon-48.png
+          convert $SOURCE_ICON -resize 72x72 icon-72.png
+          convert $SOURCE_ICON -resize 96x96 icon-96.png
+          convert $SOURCE_ICON -resize 144x144 icon-144.png
+          convert $SOURCE_ICON -resize 192x192 icon-192.png
+
+          # 同时生成 WebP 格式（新版 Android 使用）
+          convert $SOURCE_ICON -resize 48x48 icon-48.webp
+          convert $SOURCE_ICON -resize 72x72 icon-72.webp
+          convert $SOURCE_ICON -resize 96x96 icon-96.webp
+          convert $SOURCE_ICON -resize 144x144 icon-144.webp
+          convert $SOURCE_ICON -resize 192x192 icon-192.webp
           cd ..
 
-          # 替换 Android 图标
-          cp metacubex-dist/icon-48.png android/app/src/main/res/mipmap-mdpi/ic_launcher.png
-          cp metacubex-dist/icon-72.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
-          cp metacubex-dist/icon-96.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
-          cp metacubex-dist/icon-144.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-          cp metacubex-dist/icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          # 替换所有 mipmap 目录中的图标文件
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            case $density in
+              mdpi) size=48 ;;
+              hdpi) size=72 ;;
+              xhdpi) size=96 ;;
+              xxhdpi) size=144 ;;
+              xxxhdpi) size=192 ;;
+            esac
 
-          # 同时替换圆形图标
-          cp metacubex-dist/icon-48.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
-          cp metacubex-dist/icon-72.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
-          cp metacubex-dist/icon-96.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
-          cp metacubex-dist/icon-144.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
-          cp metacubex-dist/icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+            # 替换 PNG 格式
+            cp metacubex-dist/icon-${size}.png android/app/src/main/res/mipmap-${density}/ic_launcher.png 2>/dev/null || true
+            cp metacubex-dist/icon-${size}.png android/app/src/main/res/mipmap-${density}/ic_launcher_round.png 2>/dev/null || true
+            # 替换 WebP 格式（如果存在）
+            if [ -f "android/app/src/main/res/mipmap-${density}/ic_launcher.webp" ]; then
+              cp metacubex-dist/icon-${size}.webp android/app/src/main/res/mipmap-${density}/ic_launcher.webp
+            fi
+            if [ -f "android/app/src/main/res/mipmap-${density}/ic_launcher_round.webp" ]; then
+              cp metacubex-dist/icon-${size}.webp android/app/src/main/res/mipmap-${density}/ic_launcher_round.webp
+            fi
+          done
 
+          # 验证图标已替换
+          echo "=== Replaced icons ==="
+          ls -lh android/app/src/main/res/mipmap-*/ic_launcher.* 2>/dev/null || true
           echo "✓ MetaCubeX app icon updated"
 
       - name: Update version numbers
