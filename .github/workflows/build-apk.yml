@@ -246,7 +246,7 @@ jobs:
       - name: Update version numbers
         run: |
           # 获取上游 MetaCubeX 的版本号
-          UPSTREAM_VERSION=$(curl -s https://github.com/MetaCubeX/metacubexd/raw/main/package.json | grep -oP '"version":\s*"\K[^"]+')
+          UPSTREAM_VERSION=$(curl -sL https://raw.githubusercontent.com/MetaCubeX/metacubexd/main/package.json | grep -oP '"version":\s*"\K[^"]+')
 
           # 将版本号转换为 versionCode (例如: 2.0.0 -> 200000)
           MAJOR=$(echo $UPSTREAM_VERSION | cut -d. -f1)
