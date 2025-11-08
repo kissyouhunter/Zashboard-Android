@@ -196,8 +196,8 @@ jobs:
       - name: Download and extract MetaCubeX
         run: |
           wget -q https://github.com/MetaCubeX/metacubexd/releases/latest/download/compressed-dist.tgz
-          tar -xzf compressed-dist.tgz
-          mv dist metacubex-dist
+          mkdir -p metacubex-dist
+          tar -xzf compressed-dist.tgz -C metacubex-dist
 
           if [ ! -f "metacubex-dist/index.html" ]; then
             echo "ERROR: index.html not found!"
