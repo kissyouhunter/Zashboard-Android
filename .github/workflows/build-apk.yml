@@ -148,43 +148,6 @@ jobs:
           path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
 
-      - name: Create Release
-        if: github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ github.run_number }}
-          name: Zashboard Android Build ${{ github.run_number }}
-          body: |
-            🚀 Zashboard Android APK
-
-            📦 **Release build** - Production ready
-            🔒 Securely signed with encrypted keystore
-            ✅ HTTP and HTTPS both supported
-
-            ## Version Info
-            - **Upstream Version**: Based on Zashboard package.json version
-            - **Build Number**: #${{ github.run_number }}
-
-            ## Installation & Update
-            - **New users**: Download and install `app-release.apk`
-            - **Existing users**: Can upgrade directly without uninstalling
-            - **Note**: Version numbers auto-sync with upstream Zashboard releases
-
-            ## Configuration
-            Connect to your Mihomo server:
-            - Server: `http://YOUR_IP:9090` (HTTP) or `https://YOUR_IP:9443` (HTTPS)
-            - Secret: (optional, if configured)
-
-            ## Build Info
-            - Type: Release (optimized)
-            - Signing: Secure keystore from GitHub Secrets
-            - Based on: [Zashboard latest release](https://github.com/Zephyruso/zashboard/releases/latest)
-          files: android/app/build/outputs/apk/release/app-release.apk
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   build-metacubex:
     name: Build MetaCubeX Android APK
     runs-on: ubuntu-latest
@@ -325,38 +288,87 @@ jobs:
           path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
 
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build-zashboard, build-metacubex]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Download Zashboard APK
+        uses: actions/download-artifact@v4
+        with:
+          name: zashboard-android-release
+          path: ./apks/zashboard
+
+      - name: Download MetaCubeX APK
+        uses: actions/download-artifact@v4
+        with:
+          name: metacubex-android-release
+          path: ./apks/metacubex
+
+      - name: Get upstream versions
+        id: versions
+        run: |
+          ZASHBOARD_VERSION=$(curl -s https://raw.githubusercontent.com/Zephyruso/zashboard/main/package.json | grep -oP '"version":\s*"\K[^"]+')
+          METACUBEX_VERSION=$(curl -sL https://raw.githubusercontent.com/MetaCubeX/metacubexd/main/package.json | grep -oP '"version":\s*"\K[^"]+')
+          echo "zashboard=$ZASHBOARD_VERSION" >> $GITHUB_OUTPUT
+          echo "metacubex=$METACUBEX_VERSION" >> $GITHUB_OUTPUT
+          echo "Zashboard version: $ZASHBOARD_VERSION"
+          echo "MetaCubeX version: $METACUBEX_VERSION"
+
+      - name: Rename APK files with version numbers
+        run: |
+          mv apks/zashboard/app-release.apk apks/zashboard-v${{ steps.versions.outputs.zashboard }}-release.apk
+          mv apks/metacubex/app-release.apk apks/metacubex-v${{ steps.versions.outputs.metacubex }}-release.apk
+          ls -lh apks/
+
       - name: Create Release
-        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: metacubex-v${{ github.run_number }}
-          name: MetaCubeX Android Build ${{ github.run_number }}
+          tag_name: v${{ github.run_number }}
+          name: Android APKs Build ${{ github.run_number }}
           body: |
-            🚀 MetaCubeX Android APK
+            🚀 **Android APK Release**
 
-            📦 **Release build** - Production ready
-            🔒 Securely signed with encrypted keystore
-            ✅ HTTP and HTTPS both supported
+            本次构建包含两个独立的 APK：
 
-            ## Version Info
-            - **Upstream Version**: Based on MetaCubeX package.json version
-            - **Build Number**: #${{ github.run_number }}
+            ## 📦 Zashboard APK
+            - **文件名**: `zashboard-v${{ steps.versions.outputs.zashboard }}-release.apk`
+            - **上游版本**: ${{ steps.versions.outputs.zashboard }}
+            - **应用 ID**: com.zashboard.app
+            - **项目地址**: [Zashboard](https://github.com/Zephyruso/zashboard)
 
-            ## Installation & Update
-            - **New users**: Download and install `app-release.apk`
-            - **Existing users**: Can upgrade directly without uninstalling
-            - **Note**: Version numbers auto-sync with upstream MetaCubeX releases
+            ## 📦 MetaCubeX APK
+            - **文件名**: `metacubex-v${{ steps.versions.outputs.metacubex }}-release.apk`
+            - **上游版本**: ${{ steps.versions.outputs.metacubex }}
+            - **应用 ID**: com.metacubex.app
+            - **项目地址**: [MetaCubeX Dashboard](https://github.com/MetaCubeX/metacubexd)
 
-            ## Configuration
-            Connect to your Mihomo/Clash server:
-            - Server: `http://YOUR_IP:9090` (HTTP) or `https://YOUR_IP:9443` (HTTPS)
-            - Secret: (optional, if configured)
+            ---
 
-            ## Build Info
-            - Type: Release (optimized)
-            - Signing: Secure keystore from GitHub Secrets
-            - Based on: [MetaCubeX latest release](https://github.com/MetaCubeX/metacubexd/releases/latest)
-          files: android/app/build/outputs/apk/release/app-release.apk
+            ### 📝 通用信息
+            - **构建编号**: #${{ github.run_number }}
+            - **构建类型**: Release (已优化)
+            - **签名方式**: 使用 GitHub Secrets 中的安全密钥库签名
+            - **网络支持**: HTTP 和 HTTPS 均支持
+
+            ### 📥 安装说明
+            - **新用户**: 下载对应的 APK 文件并安装
+            - **老用户**: 可以直接升级，无需卸载旧版本
+            - **注意**: 版本号会自动同步上游项目的发布版本
+
+            ### ⚙️ 配置说明
+            安装后需要连接到你的 Mihomo/Clash 服务器：
+            - **服务器地址**: `http://YOUR_IP:9090` (HTTP) 或 `https://YOUR_IP:9443` (HTTPS)
+            - **Secret**: （如已配置则填写）
+
+            ### 🔐 安全性
+            - 所有 APK 均使用加密密钥库签名
+            - 支持明文流量（usesCleartextTraffic）以兼容 HTTP 连接
+          files: |
+            apks/zashboard-v${{ steps.versions.outputs.zashboard }}-release.apk
+            apks/metacubex-v${{ steps.versions.outputs.metacubex }}-release.apk
           draft: false
           prerelease: false
         env:
