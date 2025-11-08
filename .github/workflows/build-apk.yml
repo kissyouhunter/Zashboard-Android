@@ -65,6 +65,46 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Setup custom app icon for Zashboard
+        run: |
+          # 安装 imagemagick 用于图标转换
+          sudo apt-get update -qq
+          sudo apt-get install -y imagemagick
+
+          # 使用 Zashboard 的 favicon 作为图标
+          cd zashboard-dist
+          # 将 SVG 或 PNG 转换为不同分辨率的图标
+          if [ -f "favicon.svg" ]; then
+            convert -background none favicon.svg -resize 48x48 icon-48.png
+            convert -background none favicon.svg -resize 72x72 icon-72.png
+            convert -background none favicon.svg -resize 96x96 icon-96.png
+            convert -background none favicon.svg -resize 144x144 icon-144.png
+            convert -background none favicon.svg -resize 192x192 icon-192.png
+          elif [ -f "pwa-192x192.png" ]; then
+            convert pwa-192x192.png -resize 48x48 icon-48.png
+            convert pwa-192x192.png -resize 72x72 icon-72.png
+            convert pwa-192x192.png -resize 96x96 icon-96.png
+            convert pwa-192x192.png -resize 144x144 icon-144.png
+            convert pwa-192x192.png -resize 192x192 icon-192.png
+          fi
+          cd ..
+
+          # 替换 Android 图标
+          cp zashboard-dist/icon-48.png android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          cp zashboard-dist/icon-72.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          cp zashboard-dist/icon-96.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          cp zashboard-dist/icon-144.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          cp zashboard-dist/icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+
+          # 同时替换圆形图标
+          cp zashboard-dist/icon-48.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+          cp zashboard-dist/icon-72.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+          cp zashboard-dist/icon-96.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+          cp zashboard-dist/icon-144.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+          cp zashboard-dist/icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+
+          echo "✓ Zashboard app icon updated"
+
       - name: Update version numbers
         run: |
           # 获取上游 Zashboard 的版本号
@@ -205,6 +245,46 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Setup custom app icon for MetaCubeX
+        run: |
+          # 安装 imagemagick 用于图标转换
+          sudo apt-get update -qq
+          sudo apt-get install -y imagemagick
+
+          # 使用 MetaCubeX 的 favicon 作为图标
+          cd metacubex-dist
+          # 将 SVG 或 PNG 转换为不同分辨率的图标
+          if [ -f "favicon.svg" ]; then
+            convert -background none favicon.svg -resize 48x48 icon-48.png
+            convert -background none favicon.svg -resize 72x72 icon-72.png
+            convert -background none favicon.svg -resize 96x96 icon-96.png
+            convert -background none favicon.svg -resize 144x144 icon-144.png
+            convert -background none favicon.svg -resize 192x192 icon-192.png
+          elif [ -f "pwa-192x192.png" ]; then
+            convert pwa-192x192.png -resize 48x48 icon-48.png
+            convert pwa-192x192.png -resize 72x72 icon-72.png
+            convert pwa-192x192.png -resize 96x96 icon-96.png
+            convert pwa-192x192.png -resize 144x144 icon-144.png
+            convert pwa-192x192.png -resize 192x192 icon-192.png
+          fi
+          cd ..
+
+          # 替换 Android 图标
+          cp metacubex-dist/icon-48.png android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          cp metacubex-dist/icon-72.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          cp metacubex-dist/icon-96.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          cp metacubex-dist/icon-144.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          cp metacubex-dist/icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+
+          # 同时替换圆形图标
+          cp metacubex-dist/icon-48.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+          cp metacubex-dist/icon-72.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+          cp metacubex-dist/icon-96.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+          cp metacubex-dist/icon-144.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+          cp metacubex-dist/icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+
+          echo "✓ MetaCubeX app icon updated"
 
       - name: Update version numbers
         run: |
