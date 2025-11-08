@@ -43,6 +43,24 @@ jobs:
       - name: Install Capacitor packages
         run: npm install @capacitor/core@6.1.2 @capacitor/cli@6.1.2 @capacitor/android@6.1.2
 
+      - name: Prepare app icon before Capacitor setup
+        run: |
+          # 安装 imagemagick 用于图标处理
+          sudo apt-get update -qq
+          sudo apt-get install -y imagemagick
+
+          # 创建图标目录
+          mkdir -p resources
+
+          # 使用 Zashboard 的图标创建一个 1024x1024 的标准图标
+          if [ -f "zashboard-dist/pwa-512x512.png" ]; then
+            convert zashboard-dist/pwa-512x512.png -resize 1024x1024 resources/icon.png
+          elif [ -f "zashboard-dist/pwa-192x192.png" ]; then
+            convert zashboard-dist/pwa-192x192.png -resize 1024x1024 resources/icon.png
+          fi
+
+          echo "✓ App icon prepared"
+
       - name: Create Capacitor config
         run: |
           cat > capacitor.config.json << 'EOF'
@@ -65,32 +83,33 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Install ImageMagick for icon processing
+      - name: Force replace Android icon after sync
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y imagemagick
+          echo "=== Forcing icon replacement for Zashboard ==="
 
-      - name: Setup app icon using Capacitor assets
-        run: |
-          # 创建 resources 目录用于 Capacitor 图标
-          mkdir -p resources
+          # 手动生成所有需要的图标尺寸
+          convert resources/icon.png -resize 48x48 /tmp/icon-48.png
+          convert resources/icon.png -resize 72x72 /tmp/icon-72.png
+          convert resources/icon.png -resize 96x96 /tmp/icon-96.png
+          convert resources/icon.png -resize 144x144 /tmp/icon-144.png
+          convert resources/icon.png -resize 192x192 /tmp/icon-192.png
 
-          # 使用 Zashboard 的图标
-          if [ -f "zashboard-dist/pwa-512x512.png" ]; then
-            cp zashboard-dist/pwa-512x512.png resources/icon.png
-            # 使用同一个图标作为启动画面（推荐至少 2732x2732）
-            # 先转换为更大尺寸的启动画面
-            convert zashboard-dist/pwa-512x512.png -resize 2732x2732 -gravity center -background white -extent 2732x2732 resources/splash.png
-          elif [ -f "zashboard-dist/pwa-192x192.png" ]; then
-            cp zashboard-dist/pwa-192x192.png resources/icon.png
-            convert zashboard-dist/pwa-192x192.png -resize 2732x2732 -gravity center -background white -extent 2732x2732 resources/splash.png
-          fi
+          # 强制替换所有 mipmap 目录中的图标
+          cp /tmp/icon-48.png android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          cp /tmp/icon-72.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          cp /tmp/icon-96.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          cp /tmp/icon-144.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          cp /tmp/icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
-          # 使用 cordova-res 生成图标和启动画面
-          npm install -g cordova-res
-          cordova-res android --skip-config --copy
+          # 同时替换圆形图标
+          cp /tmp/icon-48.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+          cp /tmp/icon-72.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+          cp /tmp/icon-96.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+          cp /tmp/icon-144.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+          cp /tmp/icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
 
-          echo "✓ Icon and splash screen generated with cordova-res"
+          echo "✓ Zashboard icons forcefully replaced"
+          ls -lh android/app/src/main/res/mipmap-*/ic_launcher.png
 
       - name: Update version numbers
         run: |
@@ -211,6 +230,24 @@ jobs:
       - name: Install Capacitor packages
         run: npm install @capacitor/core@6.1.2 @capacitor/cli@6.1.2 @capacitor/android@6.1.2
 
+      - name: Prepare app icon before Capacitor setup
+        run: |
+          # 安装 imagemagick 用于图标处理
+          sudo apt-get update -qq
+          sudo apt-get install -y imagemagick
+
+          # 创建图标目录
+          mkdir -p resources
+
+          # 使用 MetaCubeX 的图标创建一个 1024x1024 的标准图标
+          if [ -f "metacubex-dist/pwa-512x512.png" ]; then
+            convert metacubex-dist/pwa-512x512.png -resize 1024x1024 resources/icon.png
+          elif [ -f "metacubex-dist/pwa-192x192.png" ]; then
+            convert metacubex-dist/pwa-192x192.png -resize 1024x1024 resources/icon.png
+          fi
+
+          echo "✓ App icon prepared"
+
       - name: Create Capacitor config
         run: |
           cat > capacitor.config.json << 'EOF'
@@ -233,32 +270,33 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Install ImageMagick for icon processing
+      - name: Force replace Android icon after sync
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y imagemagick
+          echo "=== Forcing icon replacement for MetaCubeX ==="
 
-      - name: Setup app icon using Capacitor assets
-        run: |
-          # 创建 resources 目录用于 Capacitor 图标
-          mkdir -p resources
+          # 手动生成所有需要的图标尺寸
+          convert resources/icon.png -resize 48x48 /tmp/icon-48.png
+          convert resources/icon.png -resize 72x72 /tmp/icon-72.png
+          convert resources/icon.png -resize 96x96 /tmp/icon-96.png
+          convert resources/icon.png -resize 144x144 /tmp/icon-144.png
+          convert resources/icon.png -resize 192x192 /tmp/icon-192.png
 
-          # 使用 MetaCubeX 的图标
-          if [ -f "metacubex-dist/pwa-512x512.png" ]; then
-            cp metacubex-dist/pwa-512x512.png resources/icon.png
-            # 使用同一个图标作为启动画面（推荐至少 2732x2732）
-            # 先转换为更大尺寸的启动画面
-            convert metacubex-dist/pwa-512x512.png -resize 2732x2732 -gravity center -background white -extent 2732x2732 resources/splash.png
-          elif [ -f "metacubex-dist/pwa-192x192.png" ]; then
-            cp metacubex-dist/pwa-192x192.png resources/icon.png
-            convert metacubex-dist/pwa-192x192.png -resize 2732x2732 -gravity center -background white -extent 2732x2732 resources/splash.png
-          fi
+          # 强制替换所有 mipmap 目录中的图标
+          cp /tmp/icon-48.png android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          cp /tmp/icon-72.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          cp /tmp/icon-96.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          cp /tmp/icon-144.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          cp /tmp/icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
-          # 使用 cordova-res 生成图标和启动画面
-          npm install -g cordova-res
-          cordova-res android --skip-config --copy
+          # 同时替换圆形图标
+          cp /tmp/icon-48.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+          cp /tmp/icon-72.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+          cp /tmp/icon-96.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+          cp /tmp/icon-144.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+          cp /tmp/icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
 
-          echo "✓ Icon and splash screen generated with cordova-res"
+          echo "✓ MetaCubeX icons forcefully replaced"
+          ls -lh android/app/src/main/res/mipmap-*/ic_launcher.png
 
       - name: Update version numbers
         run: |
