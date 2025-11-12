@@ -132,6 +132,8 @@ jobs:
 
             # 创建背景颜色资源
             mkdir -p android/app/src/main/res/values
+            # 删除 Capacitor 自动生成的 ic_launcher_background.xml 以避免资源冲突
+            rm -f android/app/src/main/res/values/ic_launcher_background.xml
             printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' \
               '<resources>' \
               '    <color name="ic_launcher_background">#FFFFFF</color>' \
@@ -354,6 +356,8 @@ jobs:
 
             # 创建背景颜色资源
             mkdir -p android/app/src/main/res/values
+            # 删除 Capacitor 自动生成的 ic_launcher_background.xml 以避免资源冲突
+            rm -f android/app/src/main/res/values/ic_launcher_background.xml
             printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' \
               '<resources>' \
               '    <color name="ic_launcher_background">#FFFFFF</color>' \
