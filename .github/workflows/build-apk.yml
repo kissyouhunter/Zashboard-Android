@@ -106,46 +106,44 @@ jobs:
             cp /tmp/icon-144.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
             cp /tmp/icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
-          # 同时替换圆形图标
-          cp /tmp/icon-48.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
-          cp /tmp/icon-72.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
-          cp /tmp/icon-96.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
-          cp /tmp/icon-144.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
-          cp /tmp/icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+            # 同时替换圆形图标
+            cp /tmp/icon-48.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+            cp /tmp/icon-72.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+            cp /tmp/icon-96.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+            cp /tmp/icon-144.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+            cp /tmp/icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
 
-          # 处理adaptive图标 (Android 8.0+)
-          mkdir -p android/app/src/main/res/mipmap-anydpi-v26
-          cat > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/ic_launcher_background"/>
-    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
-</adaptive-icon>
-EOF
+            # 处理adaptive图标 (Android 8.0+)
+            mkdir -p android/app/src/main/res/mipmap-anydpi-v26
 
-          cat > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml <<'EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/ic_launcher_background"/>
-    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
-</adaptive-icon>
-EOF
+            printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' \
+              '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">' \
+              '    <background android:drawable="@color/ic_launcher_background"/>' \
+              '    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>' \
+              '</adaptive-icon>' \
+              > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
 
-          # 创建背景颜色资源
-          mkdir -p android/app/src/main/res/values
-          cat > android/app/src/main/res/values/colors.xml <<'EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <color name="ic_launcher_background">#FFFFFF</color>
-</resources>
-EOF
+            printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' \
+              '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">' \
+              '    <background android:drawable="@color/ic_launcher_background"/>' \
+              '    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>' \
+              '</adaptive-icon>' \
+              > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 
-          # 创建前景图标（使用最大的图标作为前景）
-          cp /tmp/icon-192.png android/app/src/main/res/mipmap/ic_launcher_foreground.png
-        fi
+            # 创建背景颜色资源
+            mkdir -p android/app/src/main/res/values
+            printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' \
+              '<resources>' \
+              '    <color name="ic_launcher_background">#FFFFFF</color>' \
+              '</resources>' \
+              > android/app/src/main/res/values/colors.xml
 
-        echo "✓ Zashboard icons forcefully replaced"
-        ls -lh android/app/src/main/res/mipmap-*/ic_launcher.png
+            # 创建前景图标（使用最大的图标作为前景）
+            cp /tmp/icon-192.png android/app/src/main/res/mipmap/ic_launcher_foreground.png
+          fi
+
+          echo "✓ Zashboard icons forcefully replaced"
+          ls -lh android/app/src/main/res/mipmap-*/ic_launcher.png
 
       - name: Update version numbers
         run: |
@@ -329,46 +327,44 @@ EOF
             cp /tmp/icon-144.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
             cp /tmp/icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
-          # 同时替换圆形图标
-          cp /tmp/icon-48.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
-          cp /tmp/icon-72.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
-          cp /tmp/icon-96.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
-          cp /tmp/icon-144.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
-          cp /tmp/icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+            # 同时替换圆形图标
+            cp /tmp/icon-48.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+            cp /tmp/icon-72.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+            cp /tmp/icon-96.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+            cp /tmp/icon-144.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+            cp /tmp/icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
 
-          # 处理adaptive图标 (Android 8.0+)
-          mkdir -p android/app/src/main/res/mipmap-anydpi-v26
-          cat > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/ic_launcher_background"/>
-    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
-</adaptive-icon>
-EOF
+            # 处理adaptive图标 (Android 8.0+)
+            mkdir -p android/app/src/main/res/mipmap-anydpi-v26
 
-          cat > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml <<'EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/ic_launcher_background"/>
-    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
-</adaptive-icon>
-EOF
+            printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' \
+              '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">' \
+              '    <background android:drawable="@color/ic_launcher_background"/>' \
+              '    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>' \
+              '</adaptive-icon>' \
+              > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
 
-          # 创建背景颜色资源
-          mkdir -p android/app/src/main/res/values
-          cat > android/app/src/main/res/values/colors.xml <<'EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <color name="ic_launcher_background">#FFFFFF</color>
-</resources>
-EOF
+            printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' \
+              '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">' \
+              '    <background android:drawable="@color/ic_launcher_background"/>' \
+              '    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>' \
+              '</adaptive-icon>' \
+              > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 
-          # 创建前景图标（使用最大的图标作为前景）
-          cp /tmp/icon-192.png android/app/src/main/res/mipmap/ic_launcher_foreground.png
-        fi
+            # 创建背景颜色资源
+            mkdir -p android/app/src/main/res/values
+            printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' \
+              '<resources>' \
+              '    <color name="ic_launcher_background">#FFFFFF</color>' \
+              '</resources>' \
+              > android/app/src/main/res/values/colors.xml
 
-        echo "✓ MetaCubeX icons forcefully replaced"
-        ls -lh android/app/src/main/res/mipmap-*/ic_launcher.png
+            # 创建前景图标（使用最大的图标作为前景）
+            cp /tmp/icon-192.png android/app/src/main/res/mipmap/ic_launcher_foreground.png
+          fi
+
+          echo "✓ MetaCubeX icons forcefully replaced"
+          ls -lh android/app/src/main/res/mipmap-*/ic_launcher.png
 
       - name: Update version numbers
         run: |
