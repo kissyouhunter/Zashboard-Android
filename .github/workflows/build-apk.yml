@@ -139,6 +139,7 @@ jobs:
               > android/app/src/main/res/values/colors.xml
 
             # 创建前景图标（使用最大的图标作为前景）
+            mkdir -p android/app/src/main/res/mipmap
             cp /tmp/icon-192.png android/app/src/main/res/mipmap/ic_launcher_foreground.png
           fi
 
@@ -360,6 +361,7 @@ jobs:
               > android/app/src/main/res/values/colors.xml
 
             # 创建前景图标（使用最大的图标作为前景）
+            mkdir -p android/app/src/main/res/mipmap
             cp /tmp/icon-192.png android/app/src/main/res/mipmap/ic_launcher_foreground.png
           fi
 
