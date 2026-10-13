@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout workflow repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download and extract Zashboard
         run: |
@@ -27,7 +27,7 @@ jobs:
           fi
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 18
 
@@ -208,13 +208,13 @@ jobs:
           echo "✓ Gradle signing configured for Release build"
 
       - name: Setup JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       # 改为构建Release APK
       - name: Build Release APK
@@ -237,7 +237,7 @@ jobs:
 
     steps:
       - name: Checkout workflow repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download and extract MetaCubeX
         run: |
@@ -251,7 +251,7 @@ jobs:
           fi
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 18
 
@@ -432,13 +432,13 @@ jobs:
           echo "✓ Gradle signing configured for Release build"
 
       - name: Setup JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: Build Release APK
         run: |
@@ -490,7 +490,7 @@ jobs:
           ls -lh apks/
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
           name: Android APKs Build ${{ github.run_number }}
